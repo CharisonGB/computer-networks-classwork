@@ -17,6 +17,7 @@
 #include "includes/flooding.h"
 #include "includes/routing.h"
 #include "includes/IP.h"
+#include "includes/socket.h"
 
 module Node{
 	uses interface Boot;
@@ -33,6 +34,8 @@ module Node{
 	
 	uses interface Routing;
 	uses interface InternetProtocol as IP;
+	
+	uses interface Transport;
 }
 
 implementation{
@@ -59,6 +62,7 @@ implementation{
 	event void AMControl.stopDone(error_t err){}
 
 	event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
+		/*
 		//dbg(GENERAL_CHANNEL, "Packet Received\n");
 		if(len == sizeof(pack)) // Is the payload received the size of a pack?
 		{
@@ -72,18 +76,16 @@ implementation{
 		}
 		
 		dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
+		*/
 		return msg;
 	}
 	
-	event void IP.receive(uint8_t *payload, uint8_t len)
+	event void IP.receive(uint8_t *payload, uint8_t len, uint16_t source)
 	{
 		dbg(GENERAL_CHANNEL, "Package Payload: %s\n", payload);
 	}
 
 	event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
-		//const char* str = "Test the chains. Gnaw the screws. We are many. They are few.";
-		//uint8_t* s = (uint8_t*)str;
-		//call Flooding.flood(s, strlen(str)+1);
 		
 		dbg(GENERAL_CHANNEL, "PING EVENT \n");
 		//makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
@@ -110,7 +112,20 @@ implementation{
 	
 	event void CommandHandler.printDistanceVector(){}
 	
-	event void CommandHandler.setTestServer(){}
+	event void CommandHandler.setTestServer(uint8_t source, uint8_t port)
+	{
+		socket_t fd;
+		socket_addr_t srvrAddr;
+		
+		srvrAddr.port = (socket_port_t)port;
+		srvrAddr.addr = (socket_t)source;
+		
+		fd = call Transport.socket();
+		if(fd != NULL)
+			call Transport.bind(fd, &srvrAddr);
+		
+		call Transport.listen(fd);
+	}
 	
 	event void CommandHandler.setTestClient(){}
 	

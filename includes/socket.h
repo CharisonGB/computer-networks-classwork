@@ -1,6 +1,8 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
+#include "packet.h"
+
 enum{
     MAX_NUM_OF_SOCKETS = 10,
     ROOT_SOCKET_ADDR = 255,
@@ -15,7 +17,6 @@ enum socket_state{
     SYN_SENT,
     SYN_RCVD,
 };
-
 
 typedef nx_uint8_t nx_socket_port_t;
 typedef uint8_t socket_port_t;
@@ -52,5 +53,39 @@ typedef struct socket_store_t{
     uint16_t RTT;
     uint8_t effectiveWindow;
 }socket_store_t;
+
+enum{
+	TRANSPORT_HEADER_LENGTH = 8,
+	TRANSPORT_MAX_PAYLOAD = PACKET_MAX_PAYLOAD_SIZE - TRANSPORT_HEADER_LENGTH
+};
+
+enum{
+	SYN = 1,	// 2^0
+	ACK = 2,	// 2^1
+	FIN = 4		// 2^2
+	/*	Enumerating flags as unique powers of 2 also uniquely emumerates their sums.
+		Each flag is analogous to a bit position.	*/
+};
+
+typedef nx_struct Segment{
+	nx_socket_port_t src;
+	nx_socket_port_t dest;
+	nx_uint16_t seq;
+	nx_uint16_t ack;
+	nx_uint8_t flags;
+	nx_uint8_t advertWindow;
+	nx_uint8_t payload[TRANSPORT_MAX_PAYLOAD];
+}segment_t;
+
+void makeSegment(segment_t* seg, socket_port_t src, socket_port_t dest, uint16_t seq, uint16_t ack, uint8_t flags, uint8_t adwndw, uint8_t* pyld, uint8_t len)
+{
+	seg->src = src;
+	seg->dest = dest;
+	seg->seq = seq;
+	seg->ack = ack;
+	seg->flags = flags;
+	seg->advertWindow = adwndw;
+	memcpy(seg->payload, pyld, len);
+}
 
 #endif

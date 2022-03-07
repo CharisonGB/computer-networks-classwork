@@ -39,7 +39,7 @@ implementation
 						if(ipp->dest == TOS_NODE_ID)
 						{
 							dbg(ROUTING_CHANNEL, "[ROUTING::IP] %d was the final destination of an IP Packet!\n", TOS_NODE_ID);
-							signal InternetProtocol.receive(&ipp->payload, IP_MAX_PAYLOAD);	// Pass to interface.
+							signal InternetProtocol.receive(&ipp->payload, IP_MAX_PAYLOAD, ipp->src);	// Pass to interface.
 						}
 						else
 						{
@@ -70,6 +70,7 @@ implementation
 		uint16_t nextHop = call Routing.next(destination);
 		if(nextHop == 0) { return; }
 		
+		// FIXME: load the actual size of the payload rather than implicitly padding.
 		makeIPPacket(ipp, TOS_NODE_ID, destination, IP_TTL, PROTOCOL_PING, payload, IP_MAX_PAYLOAD);
 		
 		makePack(frwdPack, TOS_NODE_ID, nextHop, IP_TTL, PROTOCOL_PING, 0, ipp, sizeof(IPPacket));

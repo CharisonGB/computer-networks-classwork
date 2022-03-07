@@ -64,7 +64,7 @@ implementation
 		}
 		
 		makePack(frwdPack, TOS_NODE_ID, NULL, FLOOD_TTL, PROTOCOL_FLOOD, sequenceNumber++, fld, sizeof(Floodable));
-		dbg(FLOODING_CHANNEL, "[FLOOD] FloodSource=%d|TTL=%d|Sequence=%d\n", fld->src, frwdPack->TTL, frwdPack->seq);
+		//dbg(FLOODING_CHANNEL, "[FLOOD] FloodSource=%d|TTL=%d|Sequence=%d\n", fld->src, frwdPack->TTL, frwdPack->seq);
 		
 		post forwardToNeighbors();
 	}
@@ -74,15 +74,13 @@ implementation
 		buffer = payload; // When this returns, will payload still point to the correct data?
 		bufLen = len;
 		
-		/*
-			Starts a loop to fragment oversized payloads.
-			call ForwardDelay.startOneShot( (call Random.rand16() % 50) + 50 );
-		*/
+		// Starts a loop to fragment oversized payloads.
+		//call ForwardDelay.startOneShot( (call Random.rand16() % 50) + 50 );
 
 		makeFloodable(fld, TOS_NODE_ID, buffer, bufLen);
 		
 		makePack(frwdPack, TOS_NODE_ID, NULL, FLOOD_TTL, PROTOCOL_FLOOD, sequenceNumber++, fld, sizeof(Floodable));
-		dbg(FLOODING_CHANNEL, "[FLOOD] FloodSource=%d|TTL=%d|Sequence=%d\n", fld->src, frwdPack->TTL, frwdPack->seq);
+		//dbg(FLOODING_CHANNEL, "[FLOOD] FloodSource=%d|TTL=%d|Sequence=%d\n", fld->src, frwdPack->TTL, frwdPack->seq);
 		
 		post forwardToNeighbors();
 	}

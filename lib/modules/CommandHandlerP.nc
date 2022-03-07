@@ -74,8 +74,8 @@ implementation{
                 break;
 
             case CMD_TEST_SERVER:
-                dbg(COMMAND_CHANNEL, "Command Type: Client\n");
-                signal CommandHandler.setTestServer();
+                dbg(COMMAND_CHANNEL, "Command Type: Server\n");
+                signal CommandHandler.setTestServer(buff[0], buff[1]);
                 break;
 
             default:

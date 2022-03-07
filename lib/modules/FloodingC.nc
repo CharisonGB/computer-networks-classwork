@@ -1,3 +1,5 @@
+#include "../../includes/flooding.h"
+
 configuration FloodingC
 {
 	provides interface Flooding;
@@ -23,6 +25,6 @@ implementation
 	FloodingP.NeighborDiscovery -> NeighborDiscoveryC;
 	
 	// Sequence Number Cache.
-	components new HashmapC(uint16_t, 8);
+	components new HashmapC(uint16_t, MAX_SEQCACHE);
 	FloodingP.SequenceCache -> HashmapC;
 }

@@ -147,7 +147,7 @@ implementation
 				
 				updateGraph(src, pyldEdges, lsa->numNbrs);
 				
-				// Start a timer to post a dijkstra task when we receive a valid LSP.
+				// Start a timer to post a dijkstra task when we receive a valid LSA.
 				if( call DijkstraTimer.isRunning() == 0 )
 					call DijkstraTimer.startOneShot( (call Random.rand16() % 5000) + 5000 );
 				break;
