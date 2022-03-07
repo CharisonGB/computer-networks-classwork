@@ -12,8 +12,8 @@ enum{
 
 typedef nx_struct Flood{
 	nx_uint16_t fldSrc;
-	//nx_uint16_t seq;		// Already in Link Layer packets. Implement when building new packet type on top of AM_PACK.
-	//nx_uint8_t TTL;		// Already in Link Layer packets. Implement when building new packet type on top of AM_PACK.
+	//nx_uint16_t seq;		// Already in Link Layer packets. Implement if building new packet type on top of AM_PACK.
+	//nx_uint8_t TTL;		// Already in Link Layer packets. Implement if building new packet type on top of AM_PACK.
 	nx_uint8_t payload[FLOOD_MAX_PAYLOAD_SIZE];
 }flood_t;
 

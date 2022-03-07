@@ -1,9 +1,9 @@
-#ifndef NEIGHBOR_STATS_H
-#define NEIGHBOR_STATS_H
+#ifndef NEIGHBOR_H
+#define NEIGHBOR_H
 
 enum{
 	INACTIVE_THRESHOLD = 5,
-	MAX_NEIGHBOR_TABLE = 4
+	MAX_NEIGHBOR_TABLE = 6
 };
 
 typedef struct NeighborData{

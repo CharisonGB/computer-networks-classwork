@@ -21,7 +21,10 @@ implementation
 	components MainC;
 	NeighborDiscoveryP.Boot -> MainC.Boot;
 	
-	// Timer for discovery pings
+	// Random numbers and Timer for discovery pings
+	components RandomC;
+	NeighborDiscoveryP.Random -> RandomC;
+	
 	components new TimerMilliC() as Periodic;
 	NeighborDiscoveryP.Periodic -> Periodic;
 	

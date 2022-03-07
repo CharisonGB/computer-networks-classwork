@@ -15,6 +15,7 @@
 #include "includes/protocol.h"
 #include "includes/neighbor.h"
 #include "includes/flooding.h"
+#include "includes/linkState.h"
 
 module Node{
    uses interface Boot;
@@ -28,6 +29,8 @@ module Node{
    
    uses interface NeighborDiscovery;
    uses interface Flooding;
+   
+   uses interface Routing;
 }
 
 implementation{
@@ -61,6 +64,9 @@ implementation{
 	  {
 		 pack* myMsg=(pack*) payload; // Interpret the received payload as a pack.
          
+		 if(myMsg->dest != TOS_NODE_ID)
+			 call Routing.forward(myMsg, myMsg->dest);
+		 
 		 dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload); // Output the pack's payload to the general channel.
          return msg;
       }
@@ -70,16 +76,23 @@ implementation{
    }
 
 
-   event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
-      dbg(GENERAL_CHANNEL, "PING EVENT \n");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
-      call Sender.send(sendPackage, destination);
-	  // Testing
-	  call Flooding.flood(payload, FLOOD_MAX_PAYLOAD_SIZE);
+	event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
+		dbg(GENERAL_CHANNEL, "PING EVENT \n");
+		makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+		
+		if( call NeighborDiscovery.isNeighbor(destination) )
+			call Sender.send(sendPackage, destination);
+		else
+			call Routing.forward(&sendPackage, destination);
+	}
+   
+   event void Flooding.readFlood(uint8_t *payload, uint8_t len)
+   {
+	   //dbg(FLOODING_CHANNEL, "[FLOOD] Flood Payload: %s\n", payload);
    }
 
    event void CommandHandler.printNeighbors(){}
-
+   
    event void CommandHandler.printRouteTable(){}
 
    event void CommandHandler.printLinkState(){}
@@ -93,7 +106,8 @@ implementation{
    event void CommandHandler.setAppServer(){}
 
    event void CommandHandler.setAppClient(){}
-
+	
+	// Move to packet header
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;
       Package->dest = dest;

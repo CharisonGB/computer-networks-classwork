@@ -8,6 +8,7 @@ module NeighborDiscoveryP
 	provides interface NeighborDiscovery;
 	
 	uses interface Boot;
+	uses interface Random;
 	uses interface Timer<TMilli> as Periodic;
 	
 	uses interface SimpleSend as NDSend;
@@ -35,7 +36,7 @@ implementation
 	{
 		pack *req = &request;
 		
-		dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to broadcast a discovery ping\n", TOS_NODE_ID);
+		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to broadcast a discovery ping\n", TOS_NODE_ID);
 		call NDSend.send(request, AM_BROADCAST_ADDR);
 		
 		confirmActiveNeighbors(req->seq);
@@ -52,14 +53,14 @@ implementation
 	event void Boot.booted()
 	{
 		//call Periodic.startOneShot( 100 );
-		call Periodic.startPeriodic( 1000 );
+		call Periodic.startPeriodic( (call Random.rand16() % 500) + 500 );
 	}
 	
 	task void pingReply()
 	{
 		pack *rep = &reply;
 		
-		dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to send a ping reply to %d\n?", TOS_NODE_ID, rep->dest);
+		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to send a ping reply to %d\n?", TOS_NODE_ID, rep->dest);
 		call NDSend.send(reply, rep->dest);
 	}
 	
@@ -112,6 +113,15 @@ implementation
 		return call NeighborTable.size();
 	}
 	
+	command bool NeighborDiscovery.isNeighbor(uint16_t address)
+	{
+		if( call NeighborTable.isEmpty() )
+			return 0;
+		
+		return call NeighborTable.contains(address);
+	}
+	
+	// Move to packet header
 	void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length)
 	{
 		Package->src = src;
@@ -177,9 +187,11 @@ implementation
 			setNeighbor(myNbr, myNbr->address, lastSent, myNbr->received);
 			
 			if(myNbr->active)	// Only restore the updated neighbor if its active after the updated lastSent.
+			{
 				call NeighborTable.insert(myNbr->address, myNeighbor);
+				dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d has neighbor %d: lastSent=%d, lastRec=%d, Qual=%f\n", TOS_NODE_ID, myNbr->address, myNbr->sent, myNbr->received, myNbr->linkQual);
+			}
 		}
-		
 	}
 	
 	

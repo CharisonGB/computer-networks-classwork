@@ -31,7 +31,12 @@ implementation {
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
 	
+	// Project 1
 	components NeighborDiscoveryC, FloodingC;
 	Node.NeighborDiscovery -> NeighborDiscoveryC;
 	Node.Flooding -> FloodingC;
+	
+	// Project 2
+	components RoutingC;
+	Node.Routing -> RoutingC;
 }

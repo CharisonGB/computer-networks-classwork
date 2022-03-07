@@ -9,11 +9,11 @@
 enum{
 	PROTOCOL_PING = 0,		// Used in NeighborDiscovery module
 	PROTOCOL_PINGREPLY = 1,	// Used in NeighborDiscovery module
-	PROTOCOL_LINKEDLIST = 2,
+	PROTOCOL_LINKSTATE = 2,	// Used in RoutingTable module
 	PROTOCOL_NAME = 3,
 	PROTOCOL_TCP= 4,
 	PROTOCOL_DV = 5,
-	PROTOCOL_FLOOD = 6, // Used in Flooding module
+	PROTOCOL_FLOOD = 6, 	// Used in Flooding module
 	PROTOCOL_CMD = 99
 };
 
