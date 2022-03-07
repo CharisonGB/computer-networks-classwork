@@ -2,5 +2,6 @@
 
 interface Routing
 {
-	command void forward(pack* sendPack, uint16_t destination);
+	command uint16_t next(uint16_t destination);
+	command void printRoutingTable();
 }

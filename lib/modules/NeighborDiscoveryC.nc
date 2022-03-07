@@ -29,6 +29,6 @@ implementation
 	NeighborDiscoveryP.Periodic -> Periodic;
 	
 	// The Neighbor Table
-	components new HashmapC(NeighborData, MAX_NEIGHBOR_TABLE);
+	components new HashmapC(Neighbor, MAX_NEIGHBOR_TABLE);
 	NeighborDiscoveryP.NeighborTable -> HashmapC;
 }

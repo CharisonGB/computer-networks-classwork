@@ -14,39 +14,32 @@ module NeighborDiscoveryP
 	uses interface SimpleSend as NDSend;
 	uses interface Receive as NDReceive;
 	
-	uses interface Hashmap<NeighborData> as NeighborTable;
+	uses interface Hashmap<Neighbor> as NeighborTable;
 }
 
 implementation
 {
-	uint8_t seqNum = 0;
+	uint8_t sequenceNumber = 0;
 	
-	pack request;
-	pack reply;
+	pack request, *req = &request;	// Dedicated module-scope memory for preparing ping requests.
+	pack reply, *rep = &reply;		// Dedicated module-scope memory for preparing ping replies.
 	
-	// Copied makePack from the Skeleton Code
-	void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length);
+	Neighbor NTEntry, *entry = &NTEntry;	// Dedicated module-scope memory for manipulating NeighborTable entries.
 	
-	// Other convenient methods for manipulating the Neighbor Table
-	void setNeighbor(NeighborData *neighbor, uint16_t addr, uint16_t lastSent, uint16_t lastRec);
-	void neighborReplied(uint16_t addr, uint16_t lastRec);
-	void confirmActiveNeighbors(uint16_t lastSent);
+	// Convenient methods for manipulating the Neighbor Table
+	void updateNeighborReplies(pack* package);
+	void updateNeighborRequests(uint16_t lastPingSent);
 	
 	task void pingNeighbors()
 	{
-		pack *req = &request;
-		
-		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to broadcast a discovery ping\n", TOS_NODE_ID);
+		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is broadcasting a discovery ping\n", TOS_NODE_ID);
 		call NDSend.send(request, AM_BROADCAST_ADDR);
-		
-		confirmActiveNeighbors(req->seq);
+		updateNeighborRequests(req->seq);
 	}
 	
 	event void Periodic.fired()
 	{
-		char qPayload[5] = "PING";
-		
-		makePack(&request, TOS_NODE_ID, AM_BROADCAST_ADDR, 0, PROTOCOL_PING, seqNum++, &qPayload[0], 5);
+		makePack(&request, TOS_NODE_ID, AM_BROADCAST_ADDR, 0, PROTOCOL_PING, sequenceNumber++, NULL, 0);
 		post pingNeighbors();
 	}
 	
@@ -58,9 +51,7 @@ implementation
 	
 	task void pingReply()
 	{
-		pack *rep = &reply;
-		
-		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is attempting to send a ping reply to %d\n?", TOS_NODE_ID, rep->dest);
+		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d is sending a ping reply to %d\n", TOS_NODE_ID, rep->dest);
 		call NDSend.send(reply, rep->dest);
 	}
 	
@@ -68,23 +59,23 @@ implementation
 	{
 		if(len == sizeof(pack)) // Is the payload received the size of a pack?
 		{
-			pack* NDMsg = (pack*)payload; // Interpret the received payload as a pack.
+			pack* package = (pack*)payload; // Interpret the received payload as a pack.
 			
-			switch(NDMsg->protocol)
+			switch(package->protocol)
 			{
 				case PROTOCOL_PING: // Ping/PingReply
-					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d received PING from %d, Sequence: %d\n", TOS_NODE_ID, NDMsg->src, NDMsg->seq); // Output the pack's sender.
-					makePack(&reply, TOS_NODE_ID, NDMsg->src, 0, PROTOCOL_PINGREPLY, NDMsg->seq, NDMsg->payload, PACKET_MAX_PAYLOAD_SIZE);
+					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d received PING from %d, Sequence: %d\n", TOS_NODE_ID, package->src, package->seq); // Output the pack's sender.
+					makePack(rep, TOS_NODE_ID, package->src, 0, PROTOCOL_PINGREPLY, package->seq, NULL, 0);
 					post pingReply();
 					break;
 					
 				case PROTOCOL_PINGREPLY: // Gather Stats
-					neighborReplied(NDMsg->src, NDMsg->seq);
-					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d received PING REPLY from %d, Sequence: %d\n?", TOS_NODE_ID, NDMsg->src, NDMsg->seq);
+					updateNeighborReplies(package);
+					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d received PING REPLY from %d, Sequence: %d\n?", TOS_NODE_ID, package->src, package->seq);
 					break;
 					
 				default:
-					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Unrecognized Packet Protocol: %d\n", NDMsg->protocol);
+					//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Unrecognized Packet Protocol: %d\n", package->protocol);
 					break;
 			}
 		
@@ -94,105 +85,78 @@ implementation
 		dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Received Unknown Packet Type %d\n", len);
 		return msg;
 	}
-   
+	
+	command bool NeighborDiscovery.isNeighbor(uint16_t address)
+	{
+		return call NeighborTable.contains(address);
+	}
+	
+	// FIXME: Just pass a const reference to the key list of neighbors.
 	command uint16_t NeighborDiscovery.getNeighbors(uint16_t *neighbors)
 	{
-		uint32_t *activeAddrs;
-		uint16_t i;
+		uint32_t* addresses;
+		uint16_t n = call NeighborTable.size();
 		
-		if( call NeighborTable.isEmpty() )
-			return 0;
+		if(n == 0)
+			return n;
 		
-		activeAddrs = call NeighborTable.getKeys();
+		addresses = call NeighborTable.getKeys();
 		
-		for (i = 0; i < MAX_NEIGHBOR_TABLE; i++)
-		{
-			neighbors[i] = activeAddrs[i];
-		}
+		while(n-- > 0)
+			neighbors[n] = addresses[n];
 		
 		return call NeighborTable.size();
 	}
 	
-	command bool NeighborDiscovery.isNeighbor(uint16_t address)
+	command uint16_t NeighborDiscovery.numNeighbors()
 	{
-		if( call NeighborTable.isEmpty() )
-			return 0;
+		return call NeighborTable.size();
+	}
+	
+	command void NeighborDiscovery.printNeighborTable()
+	{
+		uint32_t* addresses = call NeighborTable.getKeys();
+		uint16_t n = call NeighborTable.size();
 		
-		return call NeighborTable.contains(address);
-	}
-	
-	// Move to packet header
-	void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length)
-	{
-		Package->src = src;
-		Package->dest = dest;
-		Package->TTL = TTL;
-		Package->seq = seq;
-		Package->protocol = protocol;
-		memcpy(Package->payload, payload, length);
-	}
-	
-	void setNeighbor(NeighborData *neighbor, uint16_t addr, uint16_t lastSent, uint16_t lastRec)
-	{
-		neighbor->address = addr;
-		neighbor->sent = lastSent;
-		neighbor->received = lastRec;
-		neighbor->linkQual = ( (float_t)(lastRec+1) / (float_t)(lastSent+1) ) * 100;
-		neighbor->active = (lastSent - lastRec) < INACTIVE_THRESHOLD;
-	}
-	
-	void neighborReplied(uint16_t addr, uint16_t lastRec)
-	{
-		NeighborData myNeighbor;
-		NeighborData *myNbr = &myNeighbor;
+		const char* title = "Neighbors:";
+		char str[n*2], *row = &str;
 		
-		if( (! call NeighborTable.isEmpty()) && call NeighborTable.contains(addr) )
-		{
-			myNeighbor = call NeighborTable.get(addr);	// Copy existing neighbor entry.
-			//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Link from %d to %d: lastSent=%d, lastRec=%d\n", TOS_NODE_ID, myNbr->address, addr, myNbr->sent, myNbr->received);
-			
-			call NeighborTable.remove(addr);			// Remove the existing entry from the table.
-		}
+		sprintf(row, "%s", "\0");
+		while(n-- > 0)
+			sprintf(row, "%s %d", row, addresses[n]);
+		
+		dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %s%s\n", title, row);
+	}
+	
+	void updateNeighborReplies(pack* package)
+	{
+		if( call NeighborTable.contains(package->src) )
+			*entry = call NeighborTable.get(package->src);
 		else
-		{
-			myNbr->sent = lastRec;
-			//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Link from %d to %d had no send history: Set lastSent=lastRec=%d\n", TOS_NODE_ID, addr, myNbr->sent);
-		}
+			entry->sent = package->seq;
 		
-		setNeighbor(myNbr, addr, myNbr->sent, lastRec);
-		//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] Link from %d to %d: lastSent=%d, lastRec=%d, Qual=%f\n", TOS_NODE_ID, myNbr->address, myNbr->sent, myNbr->received, myNbr->linkQual);
-		
-		call NeighborTable.insert(addr, myNeighbor);
+		setNeighbor(entry, package->src, entry->sent, package->seq);
+		call NeighborTable.insert(entry->addr, *entry);
 	}
 	
-	void confirmActiveNeighbors(uint16_t lastSent)
+	void updateNeighborRequests(uint16_t lastPingSent)
 	{
-		NeighborData myNeighbor;
-		NeighborData *myNbr = &myNeighbor;
+		uint32_t* addresses;
+		uint16_t n = call NeighborTable.size();
 		
-		uint32_t *activeAddrs;
-		uint16_t numAddrs = call NeighborTable.size();		// Size of address list.
-		uint16_t i;
-		
-		if( call NeighborTable.isEmpty() )
-			return;
-		
-		activeAddrs = call NeighborTable.getKeys();		// Addresses in the Neighbor Table.
-		
-		for(i = 0; i < numAddrs; i++)
+		while(n-- > 0)
 		{
-			myNeighbor = call NeighborTable.get( activeAddrs[0] );	// Copy existing neighbor entry.
-			call NeighborTable.remove( activeAddrs[0] );			// Remove the existing entry from the table. Next entry moved to index 0 by Hashmap.
+			*entry = call NeighborTable.get( addresses[n] );	// Copy existing neighbor entry.
 			
-			setNeighbor(myNbr, myNbr->address, lastSent, myNbr->received);
-			
-			if(myNbr->active)	// Only restore the updated neighbor if its active after the updated lastSent.
+			if( !entry->active )
 			{
-				call NeighborTable.insert(myNbr->address, myNeighbor);
-				dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d has neighbor %d: lastSent=%d, lastRec=%d, Qual=%f\n", TOS_NODE_ID, myNbr->address, myNbr->sent, myNbr->received, myNbr->linkQual);
+				call NeighborTable.remove( addresses[n] );	// Remove this neighbor if it has crossed the inactive threshold.
+				break;
 			}
+			
+			setNeighbor(entry, entry->addr, lastPingSent, entry->rcvd);	// Update last sequence number sent to this neighbor.
+			call NeighborTable.insert(entry->addr, *entry);
+			//dbg(NEIGHBOR_CHANNEL, "[NEIGHBOR] %d has neighbor %d: lastSent=%d, lastRec=%d, Qual=%f\n", TOS_NODE_ID, entry->addr, entry->sent, entry->rcvd, entry->linkQual);
 		}
 	}
-	
-	
 }

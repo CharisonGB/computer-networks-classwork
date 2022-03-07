@@ -9,7 +9,7 @@
 enum{
 	PROTOCOL_PING = 0,		// Used in NeighborDiscovery module
 	PROTOCOL_PINGREPLY = 1,	// Used in NeighborDiscovery module
-	PROTOCOL_LINKSTATE = 2,	// Used in RoutingTable module
+	PROTOCOL_LINKSTATE = 2,	// Used in Routing module
 	PROTOCOL_NAME = 3,
 	PROTOCOL_TCP= 4,
 	PROTOCOL_DV = 5,

@@ -1,12 +1,12 @@
-//#include "../../includes/channels.h"
-//#include "../../includes/packet.h"
+#include "../../includes/channels.h"
+#include "../../includes/packet.h"
 
 interface NeighborDiscovery
 {
-	command uint16_t getNeighbors(uint16_t *neighbors);
 	command bool isNeighbor(uint16_t address);
+	command uint16_t getNeighbors(uint16_t *neighbors);
+	command uint16_t numNeighbors();
+	command void printNeighborTable();
 }
 
-// TODO:
-// Add bool isNeighbor(address)
-// Add int numNeighbors()
+// Change getNeighbors to return const reference to the neighborlist. This way we can just point to one instance from all modules.

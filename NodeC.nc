@@ -37,6 +37,10 @@ implementation {
 	Node.Flooding -> FloodingC;
 	
 	// Project 2
-	components RoutingC;
+	components RoutingC, InternetProtocolC;
 	Node.Routing -> RoutingC;
+	Node.IP -> InternetProtocolC;
+	
+	// Project 3
+	
 }
