@@ -40,7 +40,7 @@ implementation{
       // we can ignore it.
       if(call sendTimer.isRunning() == FALSE){
           // A random element of delay is included to prevent congestion.
-         call sendTimer.startOneShot( (call Random.rand16() %300));
+         call sendTimer.startOneShot( (call Random.rand16() %300)); // Triggers sendBufferTask()
       }
    }
 
@@ -77,7 +77,7 @@ implementation{
       if(!call Queue.empty() && !busy){
          sendInfo *info;
          // We are peeking since, there is a possibility that the value will not
-         // be successfuly sent and we would like to continue to attempt to send
+         // be successfully sent and we would like to continue to attempt to send
          // it until we are successful. There is no limit on how many attempts
          // can be made.
          info = call Queue.head();
