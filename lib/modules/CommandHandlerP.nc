@@ -70,13 +70,18 @@ implementation{
 
             case CMD_TEST_CLIENT:
                 dbg(COMMAND_CHANNEL, "Command Type: Client\n");
-                signal CommandHandler.setTestClient();
+                signal CommandHandler.setTestClient(buff[0], buff[1], buff[2], buff[3], buff[4]);
                 break;
 
             case CMD_TEST_SERVER:
                 dbg(COMMAND_CHANNEL, "Command Type: Server\n");
                 signal CommandHandler.setTestServer(buff[0], buff[1]);
                 break;
+			
+			case CMD_KILL:
+				dbg(COMMAND_CHANNEL, "Command Type: Kill\n");
+				signal CommandHandler.killConn(buff[0], buff[1], buff[2], buff[3]);
+				break;
 
             default:
                 dbg(COMMAND_CHANNEL, "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);

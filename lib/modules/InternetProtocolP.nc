@@ -54,7 +54,7 @@ implementation
 					break;
 					
 				default:
-					//dbg(ROUTING_CHANNEL, "[ROUTING::IP] Unrecognized Packet Protocol: %d\n", package->protocol);
+					//dbg(ROUTING_CHANNEL, "[ROUTING::IP] Unrecognized Packet Protocol: %d\n", ipp->protocol);
 					break;
 			}
 		
@@ -65,13 +65,15 @@ implementation
 		return msg;
 	}
 	
-	command void InternetProtocol.send(uint8_t *payload, uint16_t destination)
+	command void InternetProtocol.send(uint8_t *payload, uint8_t len, uint16_t destination)
 	{
 		uint16_t nextHop = call Routing.next(destination);
 		if(nextHop == 0) { return; }
 		
-		// FIXME: load the actual size of the payload rather than implicitly padding.
-		makeIPPacket(ipp, TOS_NODE_ID, destination, IP_TTL, PROTOCOL_PING, payload, IP_MAX_PAYLOAD);
+		// FIXME: Chops data
+		if(len > IP_MAX_PAYLOAD)
+			len = IP_MAX_PAYLOAD;
+		makeIPPacket(ipp, TOS_NODE_ID, destination, IP_TTL, PROTOCOL_PING, payload, len);
 		
 		makePack(frwdPack, TOS_NODE_ID, nextHop, IP_TTL, PROTOCOL_PING, 0, ipp, sizeof(IPPacket));
 		dbg(ROUTING_CHANNEL, "[ROUTING::IP] %d is sending src=%d, dest=%d, TTL=%d\n", TOS_NODE_ID, ipp->src, ipp->dest, ipp->TTL);

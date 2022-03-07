@@ -54,60 +54,62 @@ interface Transport
     * @return socket_t - returns SUCCESS if you are able to attempt
     *    a connection with the fd passed, else return FAIL.
     */
+	
+	//command error_t send(socket_t fd);
 
-   command error_t listen(socket_t fd);
-   /**
-    * Listen to the socket and wait for a connection.
-    * @param
-	*	socket_t fd: file descriptor that is associated with the socket
-	*	that is listening for connections.
-    *    copy/paste err?:	//socket_t fd: file descriptor that is associated with the socket
-    *       				//that you are hard closing. 
-    * @side Server
-    * @return error_t - returns SUCCESS if you are able change the state 
-    *   to listen else FAIL.
-    */
+	command error_t listen(socket_t fd);
+	/**
+	 * Listen to the socket and wait for a connection.
+	 * @param
+	 *	socket_t fd: file descriptor that is associated with the socket
+	 *	that is listening for connections.
+	 *    copy/paste err?:	//socket_t fd: file descriptor that is associated with the socket
+	 *       				//that you are hard closing. 
+	 * @side Server
+	 * @return error_t - returns SUCCESS if you are able change the state 
+	 *   to listen else FAIL.
+	 */
 
-   command socket_t accept(socket_t fd);
-   /**
-    * Checks to see if there are socket connections to connect to and
-    * if there is one, connect to it.
-    * @param
-    *    socket_t fd: file descriptor that is associated with the socket
-    *       that is attempting an accept. remember, only do on listen. 
-    * @side Server
-    * @return socket_t - returns a new socket if the connection is
-    *    accepted. this socket is a copy of the server socket but with
-    *    a destination associated with the destination address and port.
-    *    if not return a null socket.
-    */
+	command socket_t accept(socket_t fd);
+	/**
+	 * Checks to see if there are socket connections to connect to and
+	 * if there is one, connect to it.
+	 * @param
+	 *    socket_t fd: file descriptor that is associated with the socket
+	 *       that is attempting an accept. remember, only do on listen. 
+	 * @side Server
+	 * @return socket_t - returns a new socket if the connection is
+	 *    accepted. this socket is a copy of the server socket but with
+	 *    a destination associated with the destination address and port.
+	 *    if not return a null socket.
+	 */
 
-   command uint16_t write(socket_t fd, uint8_t *buff, uint16_t bufflen);
-   /**
-    * Write to the socket from a buffer. This data will eventually be
-    * transmitted through your TCP implimentation.
-    * @param
-    *    socket_t fd: file descriptor that is associated with the socket
-    *       that is attempting a write.
-    * @param
-    *    uint8_t *buff: the buffer data that you are going to wrte from.
-    * @param
-    *    uint16_t bufflen: The amount of data that you are trying to
-    *       submit.
-    * @Side For your project, only client side. This could be both though.
-    * @return uint16_t - return the amount of data you are able to write
-    *    from the pass buffer. This may be shorter then bufflen
-    */
+	command uint16_t write(socket_t fd, uint8_t *buff, uint16_t bufflen);
+	/**
+	 * Write to the socket from a buffer. This data will eventually be
+	 * transmitted through your TCP implimentation.
+	 * @param
+	 *    socket_t fd: file descriptor that is associated with the socket
+	 *       that is attempting a write.
+	 * @param
+	 *    uint8_t *buff: the buffer data that you are going to wrte from.
+	 * @param
+	 *    uint16_t bufflen: The amount of data that you are trying to
+	 *       submit.
+	 * @Side For your project, only client side. This could be both though.
+	 * @return uint16_t - return the amount of data you are able to write
+	 *    from the pass buffer. This may be shorter then bufflen
+	 */
 
-   command error_t receive(pack* package);
-   /**
-    * This will pass the packet so you can handle it internally. 
-    * @param
-    *    pack *package: the TCP packet that you are handling.
-    * @Side Client/Server 
-    * @return uint16_t - return SUCCESS if you are able to handle this
-    *    packet or FAIL if there are errors.
-    */
+	command error_t receive(pack* package);
+	/**
+     * This will pass the packet so you can handle it internally. 
+     * @param
+     *    pack *package: the TCP packet that you are handling.
+     * @Side Client/Server 
+     * @return uint16_t - return SUCCESS if you are able to handle this
+     *    packet or FAIL if there are errors.
+     */
 
    command uint16_t read(socket_t fd, uint8_t *buff, uint16_t bufflen);
    /**
@@ -125,26 +127,28 @@ interface Transport
     * @return uint16_t - return the amount of data you are able to read
     *    from the pass buffer. This may be shorter then bufflen
     */
+	
+	command socket_t getConn(uint8_t source, uint8_t srcPort, uint8_t destination, uint8_t destPort);
 
-   command error_t close(socket_t fd);
-   /**
-    * Closes the socket.
-    * @param
-    *    socket_t fd: file descriptor that is associated with the socket
-    *       that you are closing. 
-    * @side Client/Server
-    * @return socket_t - returns SUCCESS if you are able to attempt
-    *    a closure with the fd passed, else return FAIL.
-    */
-
-   command error_t release(socket_t fd);
-   /**
-    * A hard close, which is not graceful. This portion is optional.
-    * @param
-    *    socket_t fd: file descriptor that is associated with the socket
-    *       that you are hard closing. 
-    * @side Client/Server
-    * @return socket_t - returns SUCCESS if you are able to attempt
-    *    a closure with the fd passed, else return FAIL.
-    */
+	command error_t close(socket_t fd);
+	/**
+	 * Closes the socket.
+	 * @param
+	 *    socket_t fd: file descriptor that is associated with the socket
+	 *       that you are closing. 
+	 * @side Client/Server
+	 * @return socket_t - returns SUCCESS if you are able to attempt
+	 *    a closure with the fd passed, else return FAIL.
+	 */
+	
+	command error_t release(socket_t fd);
+	/**
+	 * A hard close, which is not graceful. This portion is optional.
+	 * @param
+	 *    socket_t fd: file descriptor that is associated with the socket
+	 *       that you are hard closing. 
+	 * @side Client/Server
+	 * @return socket_t - returns SUCCESS if you are able to attempt
+	 *    a closure with the fd passed, else return FAIL.
+	 */
 }

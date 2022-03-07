@@ -36,13 +36,16 @@ module Node{
 	uses interface InternetProtocol as IP;
 	
 	uses interface Transport;
+	uses interface Timer<TMilli> as ConnectDelay;
+	uses interface Timer<TMilli> as CloseDelay;
+	
+	uses interface App;
 }
 
 implementation{
 	pack sendPackage;
 	
-	// Moved to packet.h
-	//void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
+	socket_t fd_clnt, fd_accept, fd_listen;
 	
 	event void Boot.booted(){
 		call AMControl.start();
@@ -90,7 +93,7 @@ implementation{
 		dbg(GENERAL_CHANNEL, "PING EVENT \n");
 		//makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
 		
-		call IP.send(payload, destination);
+		call IP.send(payload, PACKET_MAX_PAYLOAD_SIZE, destination);
 	}
 	
 	event void Flooding.readFlood(uint16_t src, uint8_t *payload, uint8_t len)
@@ -113,21 +116,72 @@ implementation{
 	event void CommandHandler.printDistanceVector(){}
 	
 	event void CommandHandler.setTestServer(uint8_t source, uint8_t port)
-	{
-		socket_t fd;
+	{/*
+		//socket_t fd_listen;
 		socket_addr_t srvrAddr;
 		
 		srvrAddr.port = (socket_port_t)port;
-		srvrAddr.addr = (socket_t)source;
+		srvrAddr.addr = (uint16_t)source;
 		
-		fd = call Transport.socket();
-		if(fd != NULL)
-			call Transport.bind(fd, &srvrAddr);
+		if( call ConnectDelay.isRunning() )
+		{
+			dbg(TRANSPORT_CHANNEL, "[TRANSPORT] BLOCKED; <%d,%d> tried to accept while another accept is in progress.\n", TOS_NODE_ID, srvrAddr.port);
+			return;
+		}
 		
-		call Transport.listen(fd);
-	}
+		if( (fd_listen = call Transport.socket()) != NULL
+			&& call Transport.bind(fd_listen, &srvrAddr) == SUCCESS
+			&& call Transport.listen(fd_listen) == SUCCESS )
+		{
+			call ConnectDelay.startOneShot(1000);
+		}
+		
+	*/}
 	
-	event void CommandHandler.setTestClient(){}
+	event void ConnectDelay.fired()
+	{/*
+		fd_accept = call Transport.accept(fd_listen);
+		if( fd_accept == NULL )
+		{
+			call ConnectDelay.startOneShot(2000);
+		}
+	*/}
+	
+	event void CommandHandler.setTestClient(uint8_t source, uint8_t srcPort, uint8_t destination, uint8_t destPort, uint16_t transfer)
+	{/*
+		socket_addr_t clntAddr, srvrAddr;
+		
+		clntAddr.port = (socket_port_t)srcPort;
+		clntAddr.addr = (uint16_t)source;
+		
+		srvrAddr.port = (socket_port_t)destPort;
+		srvrAddr.addr = (uint16_t)destination;
+		
+		if( (fd_clnt = call Transport.socket()) != NULL
+			&& call Transport.bind(fd_clnt, &clntAddr) == SUCCESS )
+		{
+			call Transport.connect(fd_clnt, &srvrAddr);
+			//Test
+			call Transport.write(fd_clnt, transfer, SOCKET_BUFFER_SIZE);
+		}
+	*/}
+	
+	event void CommandHandler.killConn(uint8_t source, uint8_t srcPort, uint8_t destination, uint8_t destPort)
+	{/*
+		fd_clnt = call Transport.getConn(source, srcPort, destination, destPort);
+		if(fd_clnt == NULL)
+			return;
+		
+		if( call Transport.close(fd_clnt) != SUCCESS );
+			dbg(TRANSPORT_CHANNEL, "[TRANSPORT] FAIL; <%d,%d> could not be closed.\n", TOS_NODE_ID, srcPort);
+		
+		return;
+	*/}
+	
+	event void CloseDelay.fired()
+	{
+		// Vestigial
+	}
 	
 	event void CommandHandler.setAppServer(){}
 	

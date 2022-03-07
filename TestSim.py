@@ -13,7 +13,9 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP = 3
+    CMD_TEST_CLIENT = 4
     CMD_TEST_SERVER = 5
+    CMD_KILL = 6
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -128,6 +130,12 @@ class TestSim:
         
     def testServer(self, source, port):
         self.sendCMD(self.CMD_TEST_SERVER, source, "{0}{1}".format(chr(source),chr(port)));
+        
+    def testClient(self, source, srcPort, destination, destPort, transfer):
+        self.sendCMD(self.CMD_TEST_CLIENT, source, "{0}{1}{2}{3}{4}".format(chr(source),chr(srcPort),chr(destination),chr(destPort),transfer));
+
+    def clientClose(self, client_addr, srcPort, destination, destPort):
+        self.sendCMD(self.CMD_KILL, client_addr, "{0}{1}{2}{3}".format(chr(client_addr),chr(srcPort),chr(destination),chr(destPort)));
 
     def addChannel(self, channelName, out=sys.stdout):
         print 'Adding Channel', channelName;
@@ -146,11 +154,15 @@ def main():
     #s.addChannel(s.ROUTING_CHANNEL);
     s.addChannel(s.TRANSPORT_CHANNEL);
 
-    s.runTime(20);
+    s.runTime(200);
     s.testServer(9, 20);
+    s.runTime(60);
+    
+    s.testClient(8, 80, 9, 20, 8);
+    s.runTime(1);
+    s.runTime(1000);
+    s.clientClose(8, 80, 9, 20);
     s.runTime(100);
-    s.ping(9, 8, "Throw Away");
-    s.runTime(10);
     #s.neighborDMP(2);
     #s.runTime(1000);
     #s.routeDMP(10);

@@ -44,4 +44,11 @@ implementation {
 	// Project 3
 	components TransportC;
 	Node.Transport -> TransportC;
+	components new TimerMilliC() as ConnTimer, new TimerMilliC() as CloseTimer;
+	Node.ConnectDelay -> ConnTimer;
+	Node.CloseDelay -> CloseTimer;
+	
+	// Project 4
+	components AppC;
+	Node.App -> AppC;
 }

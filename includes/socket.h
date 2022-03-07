@@ -16,6 +16,11 @@ enum socket_state{
     ESTABLISHED,
     SYN_SENT,
     SYN_RCVD,
+	FIN_WAIT_1,
+	FIN_WAIT_2,
+	TIME_WAIT,
+	CLOSE_WAIT,
+	LAST_ACK
 };
 
 typedef nx_uint8_t nx_socket_port_t;
@@ -55,11 +60,12 @@ typedef struct socket_store_t{
 }socket_store_t;
 
 enum{
-	TRANSPORT_HEADER_LENGTH = 8,
+	TRANSPORT_HEADER_LENGTH = 9,
 	TRANSPORT_MAX_PAYLOAD = PACKET_MAX_PAYLOAD_SIZE - TRANSPORT_HEADER_LENGTH
 };
 
 enum{
+	NONE = 0,
 	SYN = 1,	// 2^0
 	ACK = 2,	// 2^1
 	FIN = 4		// 2^2
@@ -74,6 +80,7 @@ typedef nx_struct Segment{
 	nx_uint16_t ack;
 	nx_uint8_t flags;
 	nx_uint8_t advertWindow;
+	nx_uint8_t len;
 	nx_uint8_t payload[TRANSPORT_MAX_PAYLOAD];
 }segment_t;
 
@@ -85,7 +92,15 @@ void makeSegment(segment_t* seg, socket_port_t src, socket_port_t dest, uint16_t
 	seg->ack = ack;
 	seg->flags = flags;
 	seg->advertWindow = adwndw;
+	seg->len = len;
 	memcpy(seg->payload, pyld, len);
 }
+
+typedef struct ConnectionRequest{
+	uint16_t src;
+	socket_port_t srcPort;
+	socket_port_t destPort;
+	uint8_t seq;
+}conn_req_t;
 
 #endif
